@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" class="wa-theme-awesome wa-palette-bright wa-brand-blue wa-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tidy</title>
+  <link rel="stylesheet" href="vendor/webawesome/dist-cdn/styles/webawesome.css" />
+  <!-- Official Awesome theme (layered after the base styles so its
+       .wa-theme-awesome selectors take precedence over the Default
+       theme's :root tokens). -->
+  <link rel="stylesheet" href="vendor/webawesome/dist-cdn/styles/themes/awesome.css" />
+  <!-- Self-hosted Instrument Sans; overrides the Awesome theme's Bunny Fonts
+       import so the extension never hits the network for type. -->
+  <link rel="stylesheet" href="vendor/fonts/instrument-sans.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body class="suppress-anim">
+  <div class="app">
+    <!-- Header (content swaps based on active page) -->
+    <header class="header">
+      <!-- Home page header: logo + settings gear -->
+      <div class="header-content" id="headerHome">
+        <div class="brand">
+          <img src="icons/logo/icon48TP.svg" alt="Tidy" class="logo-img" />
+        </div>
+        <wa-button id="goToSettings" appearance="plain" size="s" title="Settings">
+          <wa-icon slot="start" library="system" name="gear" label="Settings"></wa-icon>
+        </wa-button>
+      </div>
+
+      <!-- Settings page header: back chevron + title -->
+      <div class="header-content" id="headerSettings" hidden>
+        <wa-button id="goBackHome" appearance="plain" size="s" title="Back to home">
+          <wa-icon slot="start" library="system" name="chevron-left" label="Back to home"></wa-icon>
+        </wa-button>
+        <h2 class="page-title">Settings</h2>
+      </div>
+    </header>
+
+    <!-- ============ HOME PAGE ============ -->
+    <div id="homePage" class="page">
+
+      <!-- Timer card -->
+      <main class="timer-card">
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Ready to focus</span>
+        </div>
+
+        <div class="timer-display">
+          <span id="timerHours">00</span><span class="colon">:</span><span id="timerMinutes">00</span><span class="colon">:</span><span id="timerSeconds">00</span>
+        </div>
+
+        <div class="session-info hidden" id="sessionInfo">
+          <span class="label">Session started</span>
+          <span class="value" id="sessionStart">—</span>
+        </div>
+
+        <div class="controls">
+          <wa-button id="primaryBtn" class="btn-block" variant="brand" size="m">
+            <wa-icon slot="start" library="system" name="play" label=""></wa-icon>
+            <span>Start Session</span>
+          </wa-button>
+          <wa-button id="endBtn" class="btn-block" variant="neutral" appearance="filled" size="m" disabled>
+            <wa-icon slot="start" library="lucide" name="square" label=""></wa-icon>
+            <span>End Session</span>
+          </wa-button>
+        </div>
+
+        <!-- Break reminder countdown -->
+        <div class="break-reminder hidden" id="breakReminder">
+          <div class="break-reminder-text">
+            <span class="break-reminder-label">Next break in</span>
+            <span class="break-time" id="breakCountdown">—</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Daily goal (toggleable) -->
+      <section id="goalCard" class="goal-card" hidden>
+        <div class="goal-row">
+          <div class="goal-info">
+            <div class="goal-label">Daily goal</div>
+            <div class="goal-detail">
+              <span id="goalCurrent">0h 0m</span>
+              <span class="goal-of">of</span>
+              <span id="goalTargetDisplay">4h</span>
+            </div>
+          </div>
+          <div class="goal-percent" id="goalPercent">0%</div>
+        </div>
+        <div class="goal-progress">
+          <div class="goal-fill" id="goalFill" style="width: 0%"></div>
+        </div>
+      </section>
+
+      <!-- Stats grid -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value" id="todayTotal">0h 0m</div>
+          <div class="stat-sub" id="todaySessions">0 sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This Week</div>
+          <div class="stat-value" id="weekTotal">0h 0m</div>
+          <div class="stat-sub" id="weekSessions">0 sessions</div>
+        </div>
+      </section>
+
+      <!-- Weekly compare (toggleable) -->
+      <section id="compareCard" class="compare-card" hidden>
+        <div class="compare-info">
+          <div class="compare-label">vs last week</div>
+          <div class="compare-detail" id="compareDetail">No data yet</div>
+        </div>
+        <div class="compare-value" id="compareValue">—</div>
+      </section>
+
+      <!-- 7-day chart -->
+      <section class="history-card">
+        <div class="history-header">
+          <h2 class="section-heading">Last 7 days</h2>
+          <span class="history-avg" id="historyAvg">avg 0h/day</span>
+        </div>
+        <div class="bar-chart" id="barChart"></div>
+        <div class="bar-labels" id="barLabels"></div>
+      </section>
+
+    </div>
+
+    <!-- ============ SETTINGS PAGE ============ -->
+    <div id="settingsPage" class="page" hidden>
+
+      <!-- Timer section -->
+      <section class="settings-group">
+        <h2 class="group-heading">Timer</h2>
+        <div class="group-body">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-label" for="breakInterval">Break reminder interval</label>
+            </div>
+            <div class="setting-control">
+              <wa-input id="breakInterval" type="number" min="1" max="120" size="s"></wa-input>
+              <span class="unit">min</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-label" for="breakDuration">Break duration</label>
+            </div>
+            <div class="setting-control">
+              <wa-input id="breakDuration" type="number" min="1" max="30" size="s"></wa-input>
+              <span class="unit">min</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label" id="autoRepeatBreaksLabel">Repeat break reminders</span>
+              <wa-button id="autoRepeatBreaksInfo" class="info-btn" appearance="plain" size="xs">
+                <wa-icon slot="start" library="system" name="circle-question" label="About repeat break reminders"></wa-icon>
+              </wa-button>
+            </div>
+            <div class="setting-control">
+              <wa-switch
+                id="autoRepeatBreaks"
+                size="s"
+                aria-labelledby="autoRepeatBreaksLabel"
+              ></wa-switch>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label" id="soundEnabledLabel">Sound on reminder</span>
+              <wa-button id="soundEnabledInfo" class="info-btn" appearance="plain" size="xs">
+                <wa-icon slot="start" library="system" name="circle-question" label="About sound on reminder"></wa-icon>
+              </wa-button>
+            </div>
+            <div class="setting-control">
+              <wa-switch
+                id="soundEnabled"
+                size="s"
+                aria-labelledby="soundEnabledLabel"
+              ></wa-switch>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Home page customization -->
+      <section class="settings-group">
+        <h2 class="group-heading">Home page</h2>
+        <div class="group-body">
+          <!-- Daily goal toggle -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label" id="showDailyGoalLabel">Show daily goal</span>
+            </div>
+            <div class="setting-control">
+              <wa-switch id="showDailyGoal" size="s" aria-labelledby="showDailyGoalLabel"></wa-switch>
+            </div>
+          </div>
+          <div class="setting-row" id="dailyGoalHoursRow">
+            <div class="setting-info">
+              <label class="setting-label" for="dailyGoalHours">Daily goal target</label>
+            </div>
+            <div class="setting-control">
+              <wa-input id="dailyGoalHours" type="number" min="1" max="16" size="s"></wa-input>
+              <span class="unit">hrs</span>
+            </div>
+          </div>
+
+          <!-- Weekly compare toggle -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label" id="showWeeklyCompareLabel">Show weekly comparison</span>
+            </div>
+            <div class="setting-control">
+              <wa-switch id="showWeeklyCompare" size="s" aria-labelledby="showWeeklyCompareLabel"></wa-switch>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data section -->
+      <section class="settings-group">
+        <h2 class="group-heading">Data</h2>
+        <div class="group-body">
+          <div class="data-actions">
+            <wa-button id="exportBackup" class="btn-block" variant="neutral" appearance="outlined" size="s">Export backup</wa-button>
+            <wa-button id="importBackup" class="btn-block" variant="neutral" appearance="outlined" size="s">Import backup</wa-button>
+            <input type="file" id="importFile" accept=".json" hidden />
+            <wa-button id="clearData" class="btn-block" variant="danger" appearance="outlined" size="s">Clear all history</wa-button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Restore backup dialog -->
+    <wa-dialog id="importModal" label="Restore backup" style="--width: 19rem;">
+      <p class="dialog-subtitle">Select what to restore. This will replace your current selection.</p>
+
+      <wa-checkbox id="restoreSettings" checked>
+        <span class="dialog-option-title">Settings</span>
+        <span slot="hint" class="dialog-option-desc" id="restoreSettingsDesc">Break interval, daily goal, feature toggles</span>
+      </wa-checkbox>
+
+      <wa-checkbox id="restoreData" checked>
+        <span class="dialog-option-title">Data (history)</span>
+        <span slot="hint" class="dialog-option-desc" id="restoreDataDesc">Your work sessions and daily totals</span>
+      </wa-checkbox>
+
+      <wa-button slot="footer" id="importCancel" variant="neutral" appearance="outlined" size="s">Cancel</wa-button>
+      <wa-button slot="footer" id="importConfirm" variant="brand" appearance="accent" size="s">Restore</wa-button>
+    </wa-dialog>
+
+    <!-- Hidden tooltip templates (positioned by Web Awesome) -->
+    <wa-tooltip id="tooltipAutoRepeatBreaks" for="autoRepeatBreaksInfo" placement="top">Keep reminding you to take a break at each interval until you resume work.</wa-tooltip>
+    <wa-tooltip id="tooltipSoundEnabled" for="soundEnabledInfo" placement="top">Play a chime when a break reminder notification appears.</wa-tooltip>
+
+  </div>
+
+  <!-- Loaded as a module so it can import the self-hosted Web Awesome
+       components. Module scripts are deferred, so the DOM is ready and
+       the DOMContentLoaded listener below still fires in time. -->
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

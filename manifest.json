@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Tidy",
+  "version": "1.0.0",
+  "description": "Track your daily work hours and get smart break reminders.",
+  "permissions": ["storage", "alarms", "notifications", "offscreen"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Tidy"
+  },
+  "icons": {
+    "16": "icons/logo/icon16.png",
+    "48": "icons/logo/icon48.png",
+    "128": "icons/logo/icon128.png"
+  }
+}

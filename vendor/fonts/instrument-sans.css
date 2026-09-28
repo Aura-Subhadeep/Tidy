@@ -1,0 +1,9 @@
+/* Instrument Sans variable font (self-hosted, OFL license in ./LICENSE).
+   Weight axis 400-700; covers the popup UI's latin character set. */
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url('./files/instrument-sans-latin-wght-normal.woff2') format('woff2-variations');
+}

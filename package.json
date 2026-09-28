@@ -1,0 +1,8 @@
+{
+  "name": "tidy",
+  "private": true,
+  "description": "Tidy — a Chrome extension for focused work sessions. UI runtime is vendored locally; see VENDOR.md.",
+  "scripts": {
+    "vendor:webawesome": "node tools/vendor-webawesome.mjs"
+  }
+}
