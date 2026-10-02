@@ -121,6 +121,21 @@ async function refreshHeartbeat() {
   await saveState(state);
 }
 
+// Chrome requires an initial time via when or delayInMinutes; a bare
+// periodInMinutes is not guaranteed to be scheduled at all.
+function createBadgeTick() {
+  chrome.alarms.create(ALARM_BADGE_TICK, { delayInMinutes: 1, periodInMinutes: 1 });
+}
+
+// Chrome drops every alarm when the extension reloads or updates. Without
+// this the badge freezes at its last value while the session keeps running.
+async function ensureBadgeTick() {
+  const state = await getState();
+  if (!state.running) return;
+  if (await chrome.alarms.get(ALARM_BADGE_TICK)) return;
+  createBadgeTick();
+}
+
 // Ends a session that outlived the browser, banking work done up to the last
 // heartbeat. onStartup alone is not enough: it is skipped when Chrome is not
 // fully quit, and on extension reloads. A ~30s MV3 suspension is always
@@ -287,7 +302,7 @@ async function startSession() {
   await scheduleNextBreak(now);
 
   await chrome.alarms.clear(ALARM_BADGE_TICK);
-  chrome.alarms.create(ALARM_BADGE_TICK, { periodInMinutes: 1 });
+  createBadgeTick();
 
   await notifyStateChanged();
 
@@ -481,3 +496,5 @@ chrome.runtime.onStartup.addListener(async () => {
   await chrome.alarms.clearAll();
   await updateBadge();
 });
+
+ensureBadgeTick().catch(() => {});
