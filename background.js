@@ -7,6 +7,10 @@ const ALARM_BREAK = 'ff-break-alarm';
 const ALARM_BREAK_TICK = 'ff-break-tick';
 const ALARM_BADGE_TICK = 'ff-badge-tick';
 
+// The badge alarm refreshes lastSeenAt every minute, so a wider gap means the
+// browser was not running: closed, crashed, or asleep.
+const SHUTDOWN_GAP_MS = 5 * 60 * 1000;
+
 const DEFAULT_SETTINGS = {
   breakInterval: 15,
   breakDuration: 5,
@@ -27,6 +31,7 @@ const DEFAULT_STATE = {
   breakMode: false,
   breakRemainingMs: null,
   currentBreakEndsAt: null,
+  lastSeenAt: null,
 };
 
 async function getState() {
@@ -35,6 +40,8 @@ async function getState() {
 }
 
 async function saveState(state) {
+  // Any write proves the browser is alive.
+  if (state && state.running) state.lastSeenAt = Date.now();
   await chrome.storage.local.set({ state });
 }
 
@@ -54,9 +61,8 @@ function dayKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-async function addWorkMsToToday(ms, sessions = 0) {
+async function addWorkMsToToday(ms, sessions = 0, key = dayKey()) {
   const { history = {} } = await chrome.storage.local.get('history');
-  const key = dayKey();
   if (!history[key]) history[key] = { totalMs: 0, sessions: 0 };
   history[key].totalMs += ms;
   history[key].sessions += sessions;
@@ -107,6 +113,46 @@ async function notifyStateChanged() {
     });
   } catch (e) {}
   await updateBadge();
+}
+
+async function refreshHeartbeat() {
+  const state = await getState();
+  if (!state.running) return;
+  await saveState(state);
+}
+
+// Ends a session that outlived the browser, banking work done up to the last
+// heartbeat. onStartup alone is not enough: it is skipped when Chrome is not
+// fully quit, and on extension reloads. A ~30s MV3 suspension is always
+// followed by the 1-minute alarm, so it never trips this check.
+async function reconcileIfBrowserGone({ force = false } = {}) {
+  const state = await getState();
+  if (!state.running) return false;
+
+  // Missing on sessions started before this field existed.
+  const lastSeen = state.lastSeenAt ?? state.sessionStart;
+  if (!force && Date.now() - lastSeen <= SHUTDOWN_GAP_MS) return false;
+
+  // Credit work up to the last heartbeat; anything after it was not worked.
+  let workMs = state.accumulatedMs;
+  if (state.sessionStart && !state.paused) {
+    const unsavedSegment = lastSeen - state.sessionStart;
+    if (unsavedSegment > 0) workMs += unsavedSegment;
+  }
+  if (workMs > 0) {
+    // Bank to the day the work happened, not the day we noticed.
+    const day = state.sessionStartedAt
+      ? dayKey(new Date(state.sessionStartedAt))
+      : dayKey();
+    await addWorkMsToToday(workMs, 1, day);
+  }
+
+  await chrome.alarms.clear(ALARM_BREAK);
+  await chrome.alarms.clear(ALARM_BREAK_TICK);
+  await chrome.alarms.clear(ALARM_BADGE_TICK);
+  await saveState(DEFAULT_STATE);
+  await notifyStateChanged();
+  return true;
 }
 
 async function scheduleNextBreak(fromMs = Date.now()) {
@@ -336,6 +382,10 @@ async function stopSession() {
 }
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  // A wake-up is the only chance to notice the browser went away meanwhile;
+  // alarms can outlive a browser restart.
+  await reconcileIfBrowserGone();
+
   const state = await getState();
 
   if (alarm.name === ALARM_BREAK) {
@@ -360,6 +410,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       await playSound('resume');
     }
   } else if (alarm.name === ALARM_BADGE_TICK) {
+    // The heartbeat that makes a later shutdown detectable.
+    await refreshHeartbeat();
     await updateBadge();
   }
 });
@@ -379,23 +431,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
       } else if (msg.type === 'STOP_SESSION') {
         sendResponse(await stopSession());
-    } else if (msg.type === 'SETTINGS_UPDATED') {
-      const state = await getState();
-      if (state.running && !state.breakMode) {
-        if (state.paused) {
-          // A paused session keeps a frozen breakRemainingMs from the old
-          // interval; re-derive it from the new settings so resume doesn't
-          // restore a stale countdown.
-          const settings = await getSettings();
-          state.breakRemainingMs = settings.breakInterval * 60 * 1000;
-          state.nextBreakAt = null;
-          await saveState(state);
-        } else {
-          await scheduleNextBreak();
+      } else if (msg.type === 'RECONCILE') {
+        sendResponse({ ok: true, recovered: await reconcileIfBrowserGone() });
+      } else if (msg.type === 'SETTINGS_UPDATED') {
+        const state = await getState();
+        if (state.running && !state.breakMode) {
+          if (state.paused) {
+            // A paused session keeps a frozen breakRemainingMs from the old
+            // interval; re-derive it from the new settings so resume doesn't
+            // restore a stale countdown.
+            const settings = await getSettings();
+            state.breakRemainingMs = settings.breakInterval * 60 * 1000;
+            state.nextBreakAt = null;
+            await saveState(state);
+          } else {
+            await scheduleNextBreak();
+          }
         }
-      }
-      sendResponse({ ok: true });
+        sendResponse({ ok: true });
       } else if (msg.type === 'GET_STATE') {
+        await reconcileIfBrowserGone();
         sendResponse(await getState());
       } else {
         sendResponse({ ok: false, reason: 'unknown' });
@@ -421,22 +476,8 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const state = await getState();
-  if (state.running) {
-    // The browser was closed mid-session; salvage any unsaved time.
-    let workMs = state.accumulatedMs;
-    if (state.sessionStart && !state.paused) {
-      const elapsed = Date.now() - state.sessionStart;
-      // Only plausible if the browser was closed for less than a day.
-      if (elapsed > 0 && elapsed < 24 * 60 * 60 * 1000) {
-        workMs += elapsed;
-      }
-    }
-    if (workMs > 0) {
-      await addWorkMsToToday(workMs, 1);
-    }
-    await saveState(DEFAULT_STATE);
-  }
+  // A real profile start, so any running session is over.
+  await reconcileIfBrowserGone({ force: true });
   await chrome.alarms.clearAll();
   await updateBadge();
 });

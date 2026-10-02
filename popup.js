@@ -47,6 +47,7 @@ const DEFAULT_STATE = {
   breakMode: false,
   breakRemainingMs: null,
   currentBreakEndsAt: null,
+  lastSeenAt: null,
 };
 
 const ICONS = {
@@ -371,6 +372,9 @@ function renderSettingsInputs(settings) {
 }
 
 async function refresh() {
+  // Opening the popup may be the first code to run after a browser restart.
+  await sendMessage({ type: 'RECONCILE' });
+
   const state = await getState();
   const settings = await getSettings();
   const history = await getHistory();
