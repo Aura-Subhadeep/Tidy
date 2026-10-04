@@ -32,10 +32,13 @@ const DEFAULT_SETTINGS = {
   breakDuration: 5,
   autoRepeatBreaks: true,
   soundEnabled: true,
+  fullscreenBreak: true,
   dailyGoalHours: 4,
   showDailyGoal: true,
   showWeeklyCompare: true,
 };
+
+const SKIP_LIMIT = 3; // mirrors SKIP_LIMIT in background.js
 
 const DEFAULT_STATE = {
   running: false,
@@ -54,6 +57,7 @@ const ICONS = {
   play: '<wa-icon slot="start" library="system" name="play" label=""></wa-icon>',
   pause: '<wa-icon slot="start" library="system" name="pause" label=""></wa-icon>',
   stop: '<wa-icon slot="start" library="lucide" name="square" label=""></wa-icon>',
+  skip: '<wa-icon slot="start" library="system" name="forward-step" label=""></wa-icon>',
 };
 
 async function getSettings() {
@@ -75,6 +79,20 @@ function dayKey(date = new Date()) {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function monthKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// Display only: the background owns the counter and is the sole writer.
+async function getSkips() {
+  const { skips } = await chrome.storage.local.get('skips');
+  const month = monthKey();
+  if (!skips || skips.month !== month) return { month, used: 0 };
+  return { month, used: Math.max(0, skips.used | 0) };
 }
 
 function last7DayKeys() {
@@ -218,14 +236,17 @@ function renderTimer(state) {
 
 function renderBreakReminder(state, settings) {
   const reminder = $('breakReminder');
+  const skipRow = $('breakSkip');
   if (!state.running) {
     reminder.classList.add('hidden');
+    skipRow.hidden = true;
     return;
   }
 
   if (state.breakMode) {
     // Inside a break: count down to the break's authoritative end time.
     reminder.classList.remove('hidden');
+    skipRow.hidden = false;
     const label = document.querySelector('.break-reminder-label');
     if (label) label.textContent = 'Break ends in';
     if (state.paused) {
@@ -239,6 +260,7 @@ function renderBreakReminder(state, settings) {
     return;
   }
 
+  skipRow.hidden = true;
   const label = document.querySelector('.break-reminder-label');
   if (label) label.textContent = 'Next break in';
   reminder.classList.remove('hidden');
@@ -257,7 +279,24 @@ function renderBreakReminder(state, settings) {
   $('breakCountdown').textContent = fmtBreakCountdown(remaining);
 }
 
-function renderControls(state) {
+function skipsRemaining(skips) {
+  return Math.max(0, SKIP_LIMIT - skips.used);
+}
+
+function renderSkips(skips) {
+  const remaining = skipsRemaining(skips);
+  const el = $('skipsLeft');
+  if (remaining === 0) {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1, 1);
+    const name = nextMonth.toLocaleDateString(undefined, { month: 'long' });
+    el.textContent = `No skips left this month · resets ${name} 1`;
+  } else {
+    el.textContent = `${remaining} skip${remaining === 1 ? '' : 's'} left this month`;
+  }
+}
+
+function renderControls(state, skips) {
   const status = getSessionStatus(state);
   const primary = $('primaryBtn');
   const end = $('endBtn');
@@ -274,8 +313,9 @@ function renderControls(state) {
     primary.disabled = false;
     end.disabled = false;
   } else if (status === 'break') {
-    primary.innerHTML = ICONS.pause + '<span>On break</span>';
-    primary.disabled = true;
+    // The primary action doubles as the skip during a break.
+    primary.innerHTML = ICONS.skip + '<span>Skip break</span>';
+    primary.disabled = skipsRemaining(skips) === 0;
     end.disabled = false;
   }
 }
@@ -353,7 +393,7 @@ async function renderStats(history, state) {
   });
 
   const avgMs = weekMs / 7;
-  $('historyAvg').textContent = `avg ${fmtHM(avgMs)}/day`;
+  $('historyAvg').textContent = `Avg ${fmtHM(avgMs)}/day`;
 }
 
 function applyFeatureVisibility(settings) {
@@ -366,6 +406,7 @@ function renderSettingsInputs(settings) {
   $('breakDuration').value = settings.breakDuration;
   $('autoRepeatBreaks').checked = settings.autoRepeatBreaks;
   $('soundEnabled').checked = settings.soundEnabled;
+  $('fullscreenBreak').checked = settings.fullscreenBreak;
   $('dailyGoalHours').value = settings.dailyGoalHours;
   $('showDailyGoal').checked = settings.showDailyGoal;
   $('showWeeklyCompare').checked = settings.showWeeklyCompare;
@@ -378,11 +419,13 @@ async function refresh() {
   const state = await getState();
   const settings = await getSettings();
   const history = await getHistory();
+  const skips = await getSkips();
 
   renderStatus(state);
   renderTimer(state);
-  renderControls(state);
+  renderControls(state, skips);
   renderBreakReminder(state, settings);
+  renderSkips(skips);
 
   applyFeatureVisibility(settings);
   if (settings.showDailyGoal) renderGoal(history, settings, state);
@@ -415,6 +458,9 @@ async function handlePrimaryClick() {
   } else if (status === 'paused') {
     await sendMessage({ type: 'RESUME_SESSION' });
     startLiveTimer();
+  } else if (status === 'break') {
+    await handleSkip();
+    return;
   } else {
     return;
   }
@@ -425,6 +471,12 @@ async function handleEnd() {
   await sendMessage({ type: 'STOP_SESSION' });
   stopLiveTimer();
   await refresh();
+}
+
+async function handleSkip() {
+  $('primaryBtn').disabled = true; // block a double click while the reply is in flight
+  await sendMessage({ type: 'SKIP_BREAK' });
+  await refresh(); // re-reads the counter; the background has already broadcast
 }
 
 function startLiveTimer() {
@@ -438,6 +490,11 @@ function startLiveTimer() {
     }
     const settings = await getSettings();
     renderBreakReminder(state, settings);
+    if (state.breakMode) {
+      const skips = await getSkips();
+      renderSkips(skips);
+      renderControls(state, skips);
+    }
   }, 1000);
 }
 
@@ -454,6 +511,7 @@ async function handleSettingChange() {
   settings.breakDuration = Math.max(1, Math.min(30, parseInt($('breakDuration').value) || 5));
   settings.autoRepeatBreaks = $('autoRepeatBreaks').checked;
   settings.soundEnabled = $('soundEnabled').checked;
+  settings.fullscreenBreak = $('fullscreenBreak').checked;
   settings.dailyGoalHours = Math.max(1, Math.min(16, parseInt($('dailyGoalHours').value) || 4));
   settings.showDailyGoal = $('showDailyGoal').checked;
   settings.showWeeklyCompare = $('showWeeklyCompare').checked;
@@ -569,7 +627,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('endBtn').addEventListener('click', handleEnd);
 
   ['breakInterval', 'breakDuration', 'autoRepeatBreaks', 'soundEnabled',
-   'dailyGoalHours', 'showDailyGoal', 'showWeeklyCompare'
+   'fullscreenBreak', 'dailyGoalHours', 'showDailyGoal', 'showWeeklyCompare'
   ].forEach(id => {
     $(id).addEventListener('change', handleSettingChange);
   });
