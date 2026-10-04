@@ -538,7 +538,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse(await stopSession());
       } else if (msg.type === 'SKIP_BREAK') {
         sendResponse(await skipBreak());
-    } else if (msg.type === 'SETTINGS_UPDATED') {
+      } else if (msg.type === 'SETTINGS_UPDATED') {
       const state = await getState();
       const settings = await getSettings();
       if (!settings.fullscreenBreak) {
