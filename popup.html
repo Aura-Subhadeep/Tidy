@@ -67,11 +67,14 @@
           </wa-button>
         </div>
 
-        <!-- Break reminder countdown -->
+        <!-- Break reminder countdown (+ remaining skips while on a break) -->
         <div class="break-reminder hidden" id="breakReminder">
           <div class="break-reminder-text">
             <span class="break-reminder-label">Next break in</span>
             <span class="break-time" id="breakCountdown">—</span>
+          </div>
+          <div class="break-skip" id="breakSkip" hidden>
+            <span class="skips-left" id="skipsLeft">—</span>
           </div>
         </div>
       </main>
@@ -102,7 +105,7 @@
           <div class="stat-sub" id="todaySessions">0 sessions</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">This Week</div>
+          <div class="stat-label">This week</div>
           <div class="stat-value" id="weekTotal">0h 0m</div>
           <div class="stat-sub" id="weekSessions">0 sessions</div>
         </div>
@@ -111,7 +114,7 @@
       <!-- Weekly compare (toggleable) -->
       <section id="compareCard" class="compare-card" hidden>
         <div class="compare-info">
-          <div class="compare-label">vs last week</div>
+          <div class="compare-label">Vs last week</div>
           <div class="compare-detail" id="compareDetail">No data yet</div>
         </div>
         <div class="compare-value" id="compareValue">—</div>
@@ -121,7 +124,7 @@
       <section class="history-card">
         <div class="history-header">
           <h2 class="section-heading">Last 7 days</h2>
-          <span class="history-avg" id="historyAvg">avg 0h/day</span>
+          <span class="history-avg" id="historyAvg">Avg 0h/day</span>
         </div>
         <div class="bar-chart" id="barChart"></div>
         <div class="bar-labels" id="barLabels"></div>
@@ -168,6 +171,22 @@
                 id="autoRepeatBreaks"
                 size="s"
                 aria-labelledby="autoRepeatBreaksLabel"
+              ></wa-switch>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label" id="fullscreenBreakLabel">Fullscreen break screen</span>
+              <wa-button id="fullscreenBreakInfo" class="info-btn" appearance="plain" size="xs">
+                <wa-icon slot="start" library="system" name="circle-question" label="About the fullscreen break screen"></wa-icon>
+              </wa-button>
+            </div>
+            <div class="setting-control">
+              <wa-switch
+                id="fullscreenBreak"
+                size="s"
+                aria-labelledby="fullscreenBreakLabel"
               ></wa-switch>
             </div>
           </div>
@@ -261,6 +280,7 @@
     <!-- Hidden tooltip templates (positioned by Web Awesome) -->
     <wa-tooltip id="tooltipAutoRepeatBreaks" for="autoRepeatBreaksInfo" placement="top">Keep reminding you to take a break at each interval until you resume work.</wa-tooltip>
     <wa-tooltip id="tooltipSoundEnabled" for="soundEnabledInfo" placement="top">Play a chime when a break reminder notification appears.</wa-tooltip>
+    <wa-tooltip id="tooltipFullscreenBreak" for="fullscreenBreakInfo" placement="top">Open each break in a fullscreen window so you cannot miss it. Turn this off to take breaks from the popup instead.</wa-tooltip>
 
   </div>
 

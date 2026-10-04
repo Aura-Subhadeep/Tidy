@@ -146,6 +146,11 @@ body {
   letter-spacing: -0.1px;
 }
 
+.section-heading {
+  font-size: 12px;
+  font-weight: 400;
+}
+
 /* ===== Timer ===== */
 .timer-card {
   background: var(--bg-elev);
@@ -274,7 +279,6 @@ body.ready .timer-display {
 
 .session-info .label {
   color: var(--text-mute);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
 }
@@ -314,6 +318,7 @@ body.ready .timer-display {
 .break-reminder {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   width: 100%;
   padding: 8px 12px;
@@ -322,7 +327,8 @@ body.ready .timer-display {
   border-radius: var(--radius-sm);
   margin-top: 2px;
   opacity: 1;
-  max-height: 80px;
+  /* Tall enough for the countdown plus the skip row */
+  max-height: 140px;
   overflow: hidden;
   transition: opacity 0.3s ease, max-height 0.3s ease, margin-top 0.3s ease,
               padding 0.3s ease, border-color 0.3s ease, background 0.3s ease;
@@ -347,7 +353,6 @@ body.ready .timer-display {
 }
 
 .break-reminder-label {
-  text-transform: uppercase;
   letter-spacing: 0.4px;
   font-size: 10px;
   font-weight: 600;
@@ -358,6 +363,22 @@ body.ready .timer-display {
   color: var(--text);
   font-weight: 650;
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Remaining skips (break only) ===== */
+.break-skip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.skips-left {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -376,9 +397,8 @@ body.ready .timer-display {
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-mute);
-  text-transform: uppercase;
   letter-spacing: 0.4px;
   font-weight: 600;
 }
@@ -596,9 +616,8 @@ body.ready .timer-display {
 }
 
 .goal-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-mute);
-  text-transform: uppercase;
   letter-spacing: 0.4px;
   font-weight: 600;
   margin-bottom: 2px;
@@ -665,9 +684,8 @@ body.ready .timer-display {
 }
 
 .compare-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-mute);
-  text-transform: uppercase;
   letter-spacing: 0.4px;
   font-weight: 600;
 }

@@ -8,8 +8,11 @@ A Chrome extension that tracks your work hours and reminds you to take breaks.
 
 ## Features
 
-- **Session timer** — start, pause, and resume work sessions from the toolbar popup.
+- **Session timer** — start, pause, and resume work sessions from the toolbar popup. The popup also shows the break countdown and the Skip Break action while a break is running.
 - **Break reminders** — get reminded to take a break after a configurable focus interval.
+- **Fullscreen break screen** — a break takes over the screen with a countdown, a progress bar, and the time you will return to work.
+- **Skip break** — end a break early and get straight back to work, up to 3 times per calendar month. The allowance resets on the 1st of every month.
+- **Break cadence is never reset** — skipping a break does not postpone the following ones; the next break still arrives on the interval you were already on.
 - **Repeat reminders** — optionally keep getting reminders at each interval until you resume working.
 - **Daily goal** — set a target (e.g. 4 hrs/day) and see a live progress bar.
 - **Statistics** — view daily and weekly focus time, comparisons, and a bar chart of the last 7 days.
@@ -18,6 +21,22 @@ A Chrome extension that tracks your work hours and reminds you to take breaks.
 - **Browser-restart safe** — if Chrome closes mid-session, the elapsed time is recorded on next startup.
 
 Everything is configurable in the extension's settings page.
+
+## Breaks
+
+When a break starts, a fullscreen break screen opens with the countdown, a
+progress bar, and the time you will return to work. It closes by itself when
+the break ends, or as soon as you skip it.
+
+The break screen cannot simply be dismissed — closing the window while a break
+is still running brings it straight back, so the break actually happens. Turn
+off **Fullscreen break screen** in Settings to take breaks from the popup instead.
+
+To skip, use **Skip break** on the break screen or in the toolbar popup. You
+get up to 3 skips per calendar month; when they run out the Skip break button
+is disabled and the countdown of skips resets on the 1st of the next month.
+Skipping never shifts your schedule — the next break still arrives on the
+interval you were already on.
 
 ## Install
 

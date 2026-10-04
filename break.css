@@ -1,0 +1,191 @@
+/* App-level aliases on the Awesome theme's tokens; mirrors popup.css. */
+:root {
+  --bg: var(--wa-color-surface-lowered, #12141c);
+  --bg-elev: var(--wa-color-surface-default, #191c26);
+  --border: var(--wa-color-surface-border, #2b3040);
+  --text: var(--wa-color-text-normal, #e6e8ef);
+  --text-dim: var(--wa-color-text-quiet, #9aa1b2);
+  --text-mute: color-mix(in oklab, var(--wa-color-text-quiet, #9aa1b2) 70%, transparent);
+  --warn: var(--wa-color-yellow-60, #e0a13a);
+  --warn-soft: color-mix(in oklab, var(--wa-color-yellow-60, #e0a13a) 14%, transparent);
+  --radius-sm: 6px;
+  --font: 'Instrument Sans Variable', 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  --wa-font-family-body: var(--font);
+  --wa-font-family-heading: var(--font);
+}
+
+/* ===== Layout ===== */
+.break-screen {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 32px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+body.ready .break-screen {
+  opacity: 1;
+}
+
+/* ===== Status pill (matches popup's break-mode pill) ===== */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklab, var(--warn) 35%, transparent);
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+/* ===== Clock ===== */
+.break-clock {
+  font-family: var(--font);
+  /* Equal-width digits keep the clock steady as seconds tick */
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+  font-size: clamp(96px, 20vmin, 320px);
+}
+
+/* ===== Progress ===== */
+.break-progress {
+  width: min(560px, 70vw);
+  height: 6px;
+  background: color-mix(in oklab, var(--wa-color-neutral-95) 8%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.break-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--warn);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ===== Skip action ===== */
+.break-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.skips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skips-row wa-button::part(base) {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#skipBtn[disabled] {
+  opacity: 0.45;
+}
+
+#skipBtn[disabled]::part(base) {
+  cursor: not-allowed;
+}
+
+#skipInfoBtn {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  color: var(--text-mute);
+  opacity: 0.55;
+}
+
+#skipInfoBtn:hover {
+  color: var(--text-dim);
+  opacity: 0.9;
+}
+
+#skipInfoBtn::part(base) {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  justify-content: center;
+}
+
+#skipInfoBtn::part(base) wa-icon {
+  font-size: 14px;
+}
+
+.skips-left {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Supporting text ===== */
+.break-hint {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 34rem;
+  line-height: 1.5;
+}
+
+.break-back-at {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.break-back-at .label {
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.break-back-at .value {
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 13px;
+}

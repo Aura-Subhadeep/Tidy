@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" class="wa-theme-awesome wa-palette-bright wa-brand-blue wa-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tidy — On a break</title>
+  <link rel="stylesheet" href="vendor/webawesome/dist-cdn/styles/webawesome.css" />
+  <!-- Official Awesome theme (layered after the base styles so its
+       .wa-theme-awesome selectors take precedence over the Default
+       theme's :root tokens). -->
+  <link rel="stylesheet" href="vendor/webawesome/dist-cdn/styles/themes/awesome.css" />
+  <!-- Self-hosted Instrument Sans; overrides the Awesome theme's Bunny Fonts
+       import so the extension never hits the network for type. -->
+  <link rel="stylesheet" href="vendor/fonts/instrument-sans.css" />
+  <link rel="stylesheet" href="break.css" />
+</head>
+<body>
+  <main class="break-screen">
+    <wa-button id="skipInfoBtn" appearance="plain" size="s">
+      <wa-icon slot="start" library="system" name="circle-question" label="About break skips"></wa-icon>
+    </wa-button>
+
+    <div class="status-pill break-mode">
+      <span class="status-dot"></span>
+      <span>On a break</span>
+    </div>
+
+    <div class="break-clock" id="breakClock">0:00</div>
+
+    <div class="break-progress">
+      <div class="break-progress-fill" id="breakProgressFill"></div>
+    </div>
+
+    <div class="break-actions">
+      <div class="skips-row">
+        <wa-button id="skipBtn" variant="neutral" appearance="filled" size="l">
+          <wa-icon slot="start" library="system" name="forward-step" label=""></wa-icon>
+          <span>Skip break</span>
+        </wa-button>
+      </div>
+      <span class="skips-left" id="skipsLeft">—</span>
+    </div>
+
+    <p class="break-hint">Stand up, look away from the screen, and breathe.</p>
+
+    <div class="break-back-at">
+      <span class="label">Back to work at</span>
+      <span class="value" id="breakEndsAt">—</span>
+    </div>
+
+    <wa-tooltip id="skipTooltip" for="skipInfoBtn" placement="top">You can skip up to 3 breaks each calendar month. The allowance resets on the first of every month.</wa-tooltip>
+  </main>
+
+  <script type="module" src="break.js"></script>
+</body>
+</html>
